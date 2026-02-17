@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { HealthState, HealthEntry } from '../types';
+import type { RootState } from './store';
 import * as mockApi from '../services/mockApi';
 import * as storage from '../services/storage';
 import { checkForAlerts } from '../utils/alertLogic';
@@ -30,8 +31,8 @@ export const addEntryThunk = createAsyncThunk(
 
     const saved = await mockApi.submitHealthEntry(fullEntry);
 
-    const state = getState() as { health: HealthState };
-    const updatedEntries = [saved, ...state.entries];
+    const rootState = getState() as RootState;
+    const updatedEntries = [saved, ...rootState.health.entries];
     await storage.saveEntries(updatedEntries);
 
     return { entry: saved, alertMessages: alertResult.messages };
