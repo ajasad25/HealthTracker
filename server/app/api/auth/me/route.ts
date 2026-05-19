@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 import { requireAuth, AuthError } from '@/lib/auth';
 import { toUserDto } from '@/lib/mappers';
 
 export async function GET(req: NextRequest) {
   try {
     const { userId } = requireAuth(req);
-    const { data } = await supabaseAdmin()
-      .from('users')
-      .select('id,email,name')
-      .eq('id', userId)
-      .maybeSingle();
+    const data = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
     if (!data) {
       return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
