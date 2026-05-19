@@ -12,17 +12,17 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { loginSchema, type LoginFormData } from '../utils/validation';
+import { signupSchema, type SignupFormData } from '../utils/validation';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
-import { loginThunk, clearError } from '../store/authSlice';
+import { signupThunk, clearError } from '../store/authSlice';
 import Button from '../components/Button';
 import type { AuthStackParamList } from '../types';
 
-type LoginNav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type SignupNav = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
-export default function LoginScreen() {
-  const navigation = useNavigation<LoginNav>();
+export default function SignupScreen() {
+  const navigation = useNavigation<SignupNav>();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
@@ -31,14 +31,14 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { name: '', email: '', password: '' },
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = (data: SignupFormData) => {
     dispatch(clearError());
-    dispatch(loginThunk(data));
+    dispatch(signupThunk(data));
   };
 
   return (
@@ -54,10 +54,10 @@ export default function LoginScreen() {
           <View className="items-center mb-10">
             <Text className="text-6xl mb-4">💓</Text>
             <Text className="text-3xl font-bold text-primary-700">
-              Health Tracker
+              Create Account
             </Text>
             <Text className="text-base text-neutral-400 mt-2">
-              Monitor your wellbeing
+              Start tracking your health
             </Text>
           </View>
 
@@ -66,6 +66,35 @@ export default function LoginScreen() {
               <Text className="text-danger-600 text-sm text-center">{error}</Text>
             </View>
           ) : null}
+
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
+              Name
+            </Text>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 ${
+                    errors.name ? 'border-danger-400' : 'border-neutral-300'
+                  }`}
+                  placeholder="Jane Doe"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  value={value}
+                />
+              )}
+            />
+            {errors.name ? (
+              <Text className="text-xs text-danger-500 mt-1">
+                {errors.name.message}
+              </Text>
+            ) : null}
+          </View>
 
           <View className="mb-4">
             <Text className="text-sm font-medium text-neutral-700 mb-1.5">
@@ -110,7 +139,7 @@ export default function LoginScreen() {
                     className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 pr-12 ${
                       errors.password ? 'border-danger-400' : 'border-neutral-300'
                     }`}
-                    placeholder="Enter your password"
+                    placeholder="At least 6 characters"
                     placeholderTextColor="#9CA3AF"
                     secureTextEntry={!showPassword}
                     onChangeText={onChange}
@@ -136,22 +165,22 @@ export default function LoginScreen() {
           </View>
 
           <Button
-            title="Sign In"
+            title="Sign Up"
             onPress={handleSubmit(onSubmit)}
             loading={isLoading}
           />
 
           <TouchableOpacity
             className="mt-6 flex-row justify-center"
-            onPress={() => navigation.navigate('Signup')}
+            onPress={() => navigation.navigate('Login')}
             accessibilityRole="button"
-            accessibilityLabel="Go to sign up"
+            accessibilityLabel="Go to sign in"
           >
             <Text className="text-sm text-neutral-500">
-              Don&apos;t have an account?{' '}
+              Already have an account?{' '}
             </Text>
             <Text className="text-sm font-semibold text-primary-600">
-              Sign up
+              Sign in
             </Text>
           </TouchableOpacity>
         </View>

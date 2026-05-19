@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
@@ -13,6 +13,8 @@ import { SYMPTOMS } from '../constants/symptoms';
 import VitalInput from '../components/VitalInput';
 import SymptomChip from '../components/SymptomChip';
 import Button from '../components/Button';
+import ScreenContainer from '../components/ScreenContainer';
+import ErrorBanner from '../components/ErrorBanner';
 import type { MainTabParamList } from '../types';
 
 type AddEntryNav = BottomTabNavigationProp<MainTabParamList, 'AddEntry'>;
@@ -22,6 +24,7 @@ export default function AddHealthEntryScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const isLoading = useAppSelector((state) => state.health.isLoading);
+  const healthError = useAppSelector((state) => state.health.error);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
 
   const {
@@ -96,9 +99,9 @@ export default function AddHealthEntryScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50" keyboardShouldPersistTaps="handled">
-      <View className="px-6 pt-14 pb-8">
-        <Text className="text-2xl font-bold text-neutral-900 mb-1">
+    <ScreenContainer>
+      <ErrorBanner message={healthError} />
+      <Text className="text-2xl font-bold text-neutral-900 mb-1">
           Log Health Entry
         </Text>
         <Text className="text-sm text-neutral-400 mb-6">
@@ -243,7 +246,6 @@ export default function AddHealthEntryScreen() {
           loading={isLoading}
           disabled={!isValid}
         />
-      </View>
-    </ScrollView>
+    </ScreenContainer>
   );
 }

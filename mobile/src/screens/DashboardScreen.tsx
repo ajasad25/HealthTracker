@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { isToday, format } from 'date-fns';
@@ -19,6 +19,8 @@ import { checkForAlerts } from '../utils/alertLogic';
 import MetricCard from '../components/MetricCard';
 import AlertBanner from '../components/AlertBanner';
 import Button from '../components/Button';
+import ScreenContainer from '../components/ScreenContainer';
+import ErrorBanner from '../components/ErrorBanner';
 import type { MainTabParamList } from '../types';
 
 type DashboardNav = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
@@ -28,6 +30,7 @@ export default function DashboardScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const entries = useAppSelector((state) => state.health.entries);
+  const healthError = useAppSelector((state) => state.health.error);
 
   useEffect(() => {
     if (user) {
@@ -46,9 +49,9 @@ export default function DashboardScreen() {
   }, [todayEntry]);
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50">
-      <View className="px-6 pt-14 pb-8">
-        <View className="flex-row justify-between items-start mb-6">
+    <ScreenContainer>
+      <ErrorBanner message={healthError} />
+      <View className="flex-row justify-between items-start mb-6">
           <View className="flex-1">
             <Text className="text-2xl font-bold text-neutral-900">
               {getGreeting()}, {user?.name?.split(' ')[0] ?? 'User'}
@@ -131,7 +134,6 @@ export default function DashboardScreen() {
             onPress={() => navigation.navigate('History')}
           />
         </View>
-      </View>
-    </ScrollView>
+    </ScreenContainer>
   );
 }

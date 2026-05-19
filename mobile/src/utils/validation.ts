@@ -38,3 +38,17 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
+
+export const signupSchema = z.object({
+  name: z
+    .string({ message: 'Name is required' })
+    .min(1, 'Name is required'),
+  email: z
+    .string({ message: 'Email is required' })
+    .email('Invalid email format'),
+  password: z
+    .string({ message: 'Password is required' })
+    .min(6, 'Password must be at least 6 characters'),
+});
+
+export type SignupFormData = z.infer<typeof signupSchema>;

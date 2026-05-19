@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAppSelector } from '../hooks/useAppSelector';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../utils/formatters';
 import { checkForAlerts } from '../utils/alertLogic';
 import MetricCard from '../components/MetricCard';
+import ScreenContainer from '../components/ScreenContainer';
 import type { HistoryStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<HistoryStackParamList, 'EntryDetail'>;
@@ -32,8 +33,7 @@ export default function HealthEntryDetailScreen({ route }: Props) {
   const alertResult = checkForAlerts(entry);
 
   return (
-    <ScrollView className="flex-1 bg-neutral-50">
-      <View className="px-6 py-6">
+    <ScreenContainer hasHeader>
         <Text className="text-sm text-neutral-400 mb-6">
           {formatDateTime(entry.timestamp)}
         </Text>
@@ -129,7 +129,6 @@ export default function HealthEntryDetailScreen({ route }: Props) {
             </View>
           </>
         ) : null}
-      </View>
-    </ScrollView>
+    </ScreenContainer>
   );
 }
