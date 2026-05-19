@@ -6,8 +6,7 @@ dist/
 mobile/node_modules/
 server/node_modules/
 server/.next/
-.env
-.env.local
 .env*.local
 !.env.example
 !.env.local.example
+config.bat
