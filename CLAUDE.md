@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Two independent npm projects; run commands from inside the relevant directory.
 
 - `mobile/` — Expo React Native app (SDK 54, React 19, NativeWind, Redux Toolkit)
-- `server/` — Next.js 16 App Router backend (API over Supabase; owns auth)
+- `server/` — Next.js 16 App Router backend (API over local Postgres via
+  Prisma; owns auth)
 
 ## Commands
 
@@ -25,7 +26,12 @@ npm install
 npm run dev                                   # http://localhost:3000
 npm test                                      # ts-jest unit tests
 npx next build                                # typechecks all routes
+npx prisma migrate dev                        # apply schema changes
+npx prisma db seed                            # seed test account
+npx prisma studio                             # browse DB (localhost:5555)
 ```
+
+Postgres must be running: `brew services start postgresql@14`.
 
 No build script for mobile (Expo bundles). Type safety via `tsc` `strict`.
 Path alias `@/*` → `src/*` (mobile) / project root (server).
@@ -33,14 +39,15 @@ Path alias `@/*` → `src/*` (mobile) / project root (server).
 **Dev auth:** real signup/login now. Create an account via the Signup
 screen. The mobile app needs `mobile/.env` → `EXPO_PUBLIC_API_URL` set to
 the backend (LAN IP on devices, not `localhost`). The backend needs
-`server/.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-`JWT_SECRET`).
+`server/.env` (`DATABASE_URL` — read by both Prisma CLI and Next) and
+`server/.env.local` (`JWT_SECRET`). Seeded login:
+`test@healthtracker.dev` / `test1234` (`npx prisma db seed`).
 
 ## Architecture
 
 **Data flow (thunks are the only place these compose):**
 `screen → dispatch(thunk) → services/api.ts (fetch) → Next.js /api/* →
-Supabase (service-role)`. JWT is stored via `services/storage.ts` in
+Prisma → local PostgreSQL`. JWT is stored via `services/storage.ts` in
 expo-secure-store; entry history lives in Postgres (not SecureStore).
 
 **State — Redux Toolkit, two slices** (`mobile/src/store/`):
@@ -59,10 +66,13 @@ expo-secure-store; entry history lives in Postgres (not SecureStore).
 
 **Backend (`server/`):** route handlers in `app/api/`; pure logic in
 `lib/` (`password` bcrypt, `jwt`, `auth` Bearer guard, `validation` zod,
-`mappers` snake_case↔camelCase, `supabase` service-role client). API
-responses are camelCase to match the mobile `HealthEntry` type. RLS is
-enabled with **no policies** — only the service-role backend can reach the
-DB; this is intended, not a missing-policy bug.
+`mappers` snake_case↔camelCase, `prisma` client singleton). API
+responses are camelCase to match the mobile `HealthEntry` type; the
+schema lives in `server/prisma/schema.prisma` with Prisma model fields
+named to match `mappers.EntryRow` (so `mappers.ts` is unchanged). The DB
+is a local Postgres owned by Prisma migrations (`server/prisma/`); no RLS
+— single-tenant dev DB. `temperature` is validated as **Celsius**
+(34–42) and stored as `numeric`.
 
 **Navigation (`mobile/src/navigation/RootNavigator.tsx`):** root stack
 swaps `Auth` (Login/Signup) ↔ `Main` on `token`. `Main` = bottom tabs
@@ -94,5 +104,10 @@ label/value/unit/status API for tests).
 - `expo-notifications` / `react-native-chart-kit` installed but unused.
 - `.env.local` / `.env` are gitignored; `.env*.example` files are tracked
   via explicit negation in `.gitignore` and `server/.gitignore`.
+- Prisma CLI reads `server/.env` only (not `.env.local`), so
+  `DATABASE_URL` lives in `server/.env`; Next loads both. Prisma is
+  pinned to v6 — v7 drops the `url = env()` datasource and the
+  `package.json#prisma` seed config (a v6 deprecation warning is
+  expected, not an error).
 - The git history has a large rename commit (root → `mobile/`); use
   `git log --follow` for pre-monorepo file history.
