@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { colors, fonts } from '../theme';
 
 interface EmptyStateProps {
   icon: string;
@@ -7,14 +8,53 @@ interface EmptyStateProps {
   subtitle: string;
 }
 
+/** Clinical-Calm empty state — editorial serif title, calm copy. */
 export default function EmptyState({ icon, title, subtitle }: EmptyStateProps) {
   return (
-    <View className="flex-1 items-center justify-center py-16 px-8">
-      <Text className="text-6xl mb-4">{icon}</Text>
-      <Text className="text-lg font-semibold text-neutral-700 text-center mb-2">
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 64,
+        paddingHorizontal: 32,
+      }}
+    >
+      <View
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 20,
+          backgroundColor: colors.tealSoft,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16,
+        }}
+      >
+        <Text style={{ fontSize: 26 }}>{icon}</Text>
+      </View>
+      <Text
+        style={{
+          fontFamily: fonts.serifItalic,
+          fontSize: 22,
+          color: colors.ink,
+          textAlign: 'center',
+          marginBottom: 6,
+        }}
+      >
         {title}
       </Text>
-      <Text className="text-sm text-neutral-400 text-center">{subtitle}</Text>
+      <Text
+        style={{
+          fontFamily: fonts.sans,
+          fontSize: 13,
+          color: colors.ink3,
+          textAlign: 'center',
+          lineHeight: 19,
+        }}
+      >
+        {subtitle}
+      </Text>
     </View>
   );
 }

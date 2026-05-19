@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +15,9 @@ import { loginSchema, type LoginFormData } from '../utils/validation';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { loginThunk, clearError } from '../store/authSlice';
-import Button from '../components/Button';
+import AuthField from '../components/AuthField';
+import Icon from '../components/Icon';
+import { colors, fonts } from '../theme';
 import type { AuthStackParamList } from '../types';
 
 type LoginNav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -43,115 +44,211 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-neutral-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: colors.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="px-8 py-12 w-full max-w-[480px] self-center">
-          <View className="items-center mb-10">
-            <Text className="text-6xl mb-4">💓</Text>
-            <Text className="text-3xl font-bold text-primary-700">
-              Health Tracker
-            </Text>
-            <Text className="text-base text-neutral-400 mt-2">
-              Monitor your wellbeing
-            </Text>
-          </View>
+      {/* Decorative tinted blooms */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: -120,
+          right: -80,
+          width: 320,
+          height: 320,
+          borderRadius: 160,
+          backgroundColor: colors.teal,
+          opacity: 0.1,
+        }}
+      />
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          bottom: -100,
+          left: -60,
+          width: 260,
+          height: 260,
+          borderRadius: 130,
+          backgroundColor: colors.coral,
+          opacity: 0.1,
+        }}
+      />
 
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 28,
+          paddingTop: 90,
+          paddingBottom: 40,
+          width: '100%',
+          maxWidth: 480,
+          alignSelf: 'center',
+        }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Brand */}
+        <View style={{ flex: 1, justifyContent: 'flex-start' }}>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              backgroundColor: colors.teal,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: colors.teal,
+              shadowOpacity: 0.4,
+              shadowRadius: 14,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 6,
+            }}
+          >
+            <Icon name="heart" size={26} color={colors.white} stroke={1.8} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.serifItalic,
+              fontSize: 40,
+              color: colors.ink,
+              lineHeight: 42,
+              letterSpacing: -1.2,
+              marginTop: 28,
+            }}
+          >
+            Welcome{'\n'}back.
+          </Text>
+          <Text
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 14,
+              color: colors.ink3,
+              lineHeight: 21,
+              marginTop: 12,
+              maxWidth: 260,
+            }}
+          >
+            Sign in to keep tracking your vitals and stay ahead of your health.
+          </Text>
+        </View>
+
+        {/* Form */}
+        <View style={{ marginTop: 40 }}>
           {error ? (
-            <View className="bg-danger-50 border border-danger-200 rounded-xl p-3 mb-4">
-              <Text className="text-danger-600 text-sm text-center">{error}</Text>
+            <View
+              style={{
+                backgroundColor: colors.coralTint,
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.sansMedium,
+                  fontSize: 13,
+                  color: '#7C2F1B',
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </Text>
             </View>
           ) : null}
 
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-              Email
-            </Text>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 ${
-                    errors.email ? 'border-danger-400' : 'border-neutral-300'
-                  }`}
-                  placeholder="you@example.com"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                />
-              )}
-            />
-            {errors.email ? (
-              <Text className="text-xs text-danger-500 mt-1">
-                {errors.email.message}
-              </Text>
-            ) : null}
-          </View>
-
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-              Password
-            </Text>
-            <View className="relative">
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 pr-12 ${
-                      errors.password ? 'border-danger-400' : 'border-neutral-300'
-                    }`}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    value={value}
-                  />
-                )}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AuthField
+                label="Email"
+                icon="user"
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                error={errors.email?.message}
               />
-              <TouchableOpacity
-                className="absolute right-3 top-3.5"
-                onPress={() => setShowPassword(!showPassword)}
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <Text className="text-lg">{showPassword ? '🙈' : '👁️'}</Text>
-              </TouchableOpacity>
-            </View>
-            {errors.password ? (
-              <Text className="text-xs text-danger-500 mt-1">
-                {errors.password.message}
-              </Text>
-            ) : null}
-          </View>
+            )}
+          />
 
-          <Button
-            title="Sign In"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AuthField
+                label="Password"
+                icon="dot"
+                placeholder="Enter your password"
+                secureTextEntry={!showPassword}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                error={errors.password?.message}
+                secureToggle={{
+                  shown: showPassword,
+                  onToggle: () => setShowPassword((s) => !s),
+                }}
+              />
+            )}
           />
 
           <TouchableOpacity
-            className="mt-6 flex-row justify-center"
+            activeOpacity={0.85}
+            disabled={isLoading}
+            onPress={handleSubmit(onSubmit)}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              backgroundColor: colors.ink,
+              borderRadius: 14,
+              paddingVertical: 16,
+              marginTop: 4,
+              opacity: isLoading ? 0.6 : 1,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.sansSemibold,
+                fontSize: 15,
+                color: colors.white,
+                letterSpacing: 0.2,
+              }}
+            >
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </Text>
+            {!isLoading && (
+              <Icon name="arrow" size={16} color={colors.white} stroke={1.8} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={() => navigation.navigate('Signup')}
             accessibilityRole="button"
             accessibilityLabel="Go to sign up"
+            style={{ marginTop: 22 }}
           >
-            <Text className="text-sm text-neutral-500">
-              Don&apos;t have an account?{' '}
-            </Text>
-            <Text className="text-sm font-semibold text-primary-600">
-              Sign up
+            <Text
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 13,
+                color: colors.ink3,
+                textAlign: 'center',
+              }}
+            >
+              New here?{' '}
+              <Text style={{ fontFamily: fonts.sansSemibold, color: colors.teal }}>
+                Create account
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>

@@ -8,8 +8,11 @@
     "start": "next start",
     "test": "jest"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.106.0",
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.6",
@@ -25,7 +28,9 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "jest": "^30.4.2",
+    "prisma": "^6.19.3",
     "ts-jest": "^29.4.9",
+    "tsx": "^4.22.2",
     "typescript": "^5"
   }
 }

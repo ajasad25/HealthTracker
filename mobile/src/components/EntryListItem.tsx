@@ -1,61 +1,179 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { isToday, isYesterday, format } from 'date-fns';
 import type { HealthEntry } from '../types';
-import { formatDateTime } from '../utils/formatters';
+import { formatDateTime, getHeartRateStatus } from '../utils/formatters';
+import { colors, fonts, radii } from '../theme';
+import StatusPill from './StatusPill';
 
 interface EntryListItemProps {
   entry: HealthEntry;
   onPress: () => void;
 }
 
+function relativeDate(ts: string): string {
+  const d = new Date(ts);
+  if (isToday(d)) return 'Today';
+  if (isYesterday(d)) return 'Yesterday';
+  return format(d, 'MMM d');
+}
+
+function Tiny({
+  label,
+  value,
+  unit,
+  alert,
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+  alert?: boolean;
+}) {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text
+        style={{
+          fontFamily: fonts.mono,
+          fontSize: 9,
+          color: colors.ink4,
+          textTransform: 'uppercase',
+          letterSpacing: 1.2,
+        }}
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontFamily: fonts.serifItalic,
+          fontSize: 16,
+          color: alert ? colors.coral : colors.ink,
+          marginTop: 2,
+        }}
+      >
+        {value}
+      </Text>
+      <Text style={{ fontFamily: fonts.sans, fontSize: 9, color: colors.ink4 }}>
+        {unit}
+      </Text>
+    </View>
+  );
+}
+
+/** Clinical-Calm history card — relative date, status pill, vital grid. */
 export default function EntryListItem({ entry, onPress }: EntryListItemProps) {
+  const alert = entry.hasAlert;
   return (
     <TouchableOpacity
-      className="bg-white rounded-2xl p-4 mb-3 border border-neutral-100"
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={`Health entry ${formatDateTime(entry.timestamp)}`}
+      style={{
+        backgroundColor: colors.surface,
+        borderRadius: radii.lg,
+        borderWidth: 1,
+        borderColor: alert ? colors.coralTint : colors.hairSoft,
+        padding: 16,
+        marginBottom: 8,
+      }}
     >
-      <View className="flex-row justify-between items-start mb-2">
-        <Text className="text-sm font-medium text-neutral-700">
-          {formatDateTime(entry.timestamp)}
-        </Text>
-        {entry.hasAlert ? (
-          <View className="bg-danger-100 rounded-full px-2.5 py-0.5">
-            <Text className="text-xs font-bold text-danger-600">⚠ Alert</Text>
-          </View>
-        ) : null}
+      {alert ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 18,
+            bottom: 18,
+            width: 3,
+            borderRadius: 999,
+            backgroundColor: colors.coral,
+          }}
+        />
+      ) : null}
+
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <View>
+          <Text
+            style={{
+              fontFamily: fonts.sansSemibold,
+              fontSize: 14,
+              color: colors.ink,
+            }}
+          >
+            {relativeDate(entry.timestamp)}
+          </Text>
+          <Text
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 11,
+              color: colors.ink3,
+              marginTop: 1,
+            }}
+          >
+            {format(new Date(entry.timestamp), 'h:mm a')}
+          </Text>
+        </View>
+        <StatusPill
+          status={alert ? 'danger' : 'normal'}
+          label={alert ? 'Alert' : 'Normal'}
+        />
       </View>
 
-      <View className="flex-row flex-wrap gap-2">
-        <View className="bg-primary-50 rounded-lg px-2.5 py-1">
-          <Text className="text-xs text-primary-700 font-medium">
-            ❤️ {entry.heartRate} bpm
-          </Text>
-        </View>
-        <View className="bg-primary-50 rounded-lg px-2.5 py-1">
-          <Text className="text-xs text-primary-700 font-medium">
-            🫁 {entry.spo2}%
-          </Text>
-        </View>
-        <View className="bg-primary-50 rounded-lg px-2.5 py-1">
-          <Text className="text-xs text-primary-700 font-medium">
-            🌡️ {entry.temperature}°C
-          </Text>
-        </View>
-        {entry.symptoms.length > 0 ? (
-          <View className="bg-warning-50 rounded-lg px-2.5 py-1">
-            <Text className="text-xs text-warning-700 font-medium">
-              {entry.symptoms.length} symptom{entry.symptoms.length !== 1 ? 's' : ''}
-            </Text>
-          </View>
-        ) : null}
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        <Tiny
+          label="HR"
+          value={entry.heartRate}
+          unit="bpm"
+          alert={getHeartRateStatus(entry.heartRate) === 'danger'}
+        />
+        <Tiny
+          label="BP"
+          value={`${entry.systolic}/${entry.diastolic}`}
+          unit="mmHg"
+        />
+        <Tiny label="SpO₂" value={entry.spo2} unit="%" />
+        <Tiny label="Temp" value={entry.temperature} unit="°C" />
       </View>
 
-      <View className="flex-row justify-end mt-2">
-        <Text className="text-neutral-400 text-sm">›</Text>
-      </View>
+      {entry.symptoms.length > 0 ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 6,
+            marginTop: 10,
+            flexWrap: 'wrap',
+          }}
+        >
+          {entry.symptoms.slice(0, 4).map((t) => (
+            <View
+              key={t}
+              style={{
+                paddingVertical: 3,
+                paddingHorizontal: 8,
+                borderRadius: 999,
+                backgroundColor: colors.bgSoft,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.sansMedium,
+                  fontSize: 10,
+                  color: colors.ink2,
+                }}
+              >
+                {t}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
