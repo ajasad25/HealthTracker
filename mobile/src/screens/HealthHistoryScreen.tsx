@@ -19,7 +19,7 @@ export default function HealthHistoryScreen() {
 
   const onRefresh = useCallback(() => {
     if (user) {
-      dispatch(fetchEntriesThunk(user.id));
+      dispatch(fetchEntriesThunk());
     }
   }, [dispatch, user]);
 

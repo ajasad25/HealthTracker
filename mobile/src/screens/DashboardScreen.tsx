@@ -31,7 +31,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (user) {
-      dispatch(fetchEntriesThunk(user.id));
+      dispatch(fetchEntriesThunk());
     }
   }, [dispatch, user]);
 

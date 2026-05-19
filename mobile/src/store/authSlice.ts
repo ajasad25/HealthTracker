@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AuthState } from '../types';
-import * as mockApi from '../services/mockApi';
+import * as api from '../services/api';
 import * as storage from '../services/storage';
 
 const initialState: AuthState = {
@@ -13,9 +13,26 @@ const initialState: AuthState = {
 export const loginThunk = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }) => {
-    const result = await mockApi.login(email, password);
-    await storage.saveToken(result.token);
-    return result;
+    const r = await api.login(email, password);
+    await storage.saveToken(r.token);
+    return r;
+  }
+);
+
+export const signupThunk = createAsyncThunk(
+  'auth/signup',
+  async ({
+    name,
+    email,
+    password,
+  }: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
+    const r = await api.signup(name, email, password);
+    await storage.saveToken(r.token);
+    return r;
   }
 );
 
@@ -27,17 +44,9 @@ export const restoreSessionThunk = createAsyncThunk(
   'auth/restoreSession',
   async () => {
     const token = await storage.getToken();
-    if (!token) {
-      throw new Error('No token found');
-    }
-    return {
-      token,
-      user: {
-        id: 'user-001',
-        name: 'Alex Johnson',
-        email: 'alex@example.com',
-      },
-    };
+    if (!token) throw new Error('No token');
+    const { user } = await api.me(token);
+    return { token, user };
   }
 );
 
@@ -63,6 +72,19 @@ const authSlice = createSlice({
       .addCase(loginThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message ?? 'Login failed';
+      })
+      .addCase(signupThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(signupThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+      })
+      .addCase(signupThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message ?? 'Signup failed';
       })
       .addCase(logoutThunk.fulfilled, (state) => {
         state.user = null;

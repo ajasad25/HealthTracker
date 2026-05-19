@@ -1,9 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { HealthState, HealthEntry } from '../types';
 import type { RootState } from './store';
-import * as mockApi from '../services/mockApi';
-import * as storage from '../services/storage';
-import { checkForAlerts } from '../utils/alertLogic';
+import * as api from '../services/api';
 
 const initialState: HealthState = {
   entries: [],
@@ -13,29 +11,22 @@ const initialState: HealthState = {
 
 export const fetchEntriesThunk = createAsyncThunk(
   'health/fetchEntries',
-  async (userId: string) => {
-    const entries = await mockApi.fetchHealthHistory(userId);
-    await storage.saveEntries(entries);
-    return entries;
+  async (_: void, { getState }) => {
+    const token = (getState() as RootState).auth.token;
+    if (!token) throw new Error('Not authenticated');
+    return api.fetchHealthHistory(token);
   }
 );
 
 export const addEntryThunk = createAsyncThunk(
   'health/addEntry',
-  async (entry: Omit<HealthEntry, 'id' | 'hasAlert'>, { getState }) => {
-    const alertResult = checkForAlerts(entry);
-    const fullEntry: Omit<HealthEntry, 'id'> = {
-      ...entry,
-      hasAlert: alertResult.hasAlert,
-    };
-
-    const saved = await mockApi.submitHealthEntry(fullEntry);
-
-    const rootState = getState() as RootState;
-    const updatedEntries = [saved, ...rootState.health.entries];
-    await storage.saveEntries(updatedEntries);
-
-    return { entry: saved, alertMessages: alertResult.messages };
+  async (
+    entry: Omit<HealthEntry, 'id' | 'userId' | 'hasAlert'>,
+    { getState }
+  ) => {
+    const token = (getState() as RootState).auth.token;
+    if (!token) throw new Error('Not authenticated');
+    return api.submitHealthEntry(token, entry);
   }
 );
 
@@ -55,9 +46,7 @@ const healthSlice = createSlice({
       })
       .addCase(fetchEntriesThunk.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.entries = action.payload.sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
+        state.entries = action.payload;
       })
       .addCase(fetchEntriesThunk.rejected, (state, action) => {
         state.isLoading = false;
@@ -69,7 +58,7 @@ const healthSlice = createSlice({
       })
       .addCase(addEntryThunk.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.entries = [action.payload.entry, ...state.entries];
+        state.entries = [action.payload, ...state.entries];
       })
       .addCase(addEntryThunk.rejected, (state, action) => {
         state.isLoading = false;

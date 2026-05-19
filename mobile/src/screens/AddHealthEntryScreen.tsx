@@ -57,7 +57,6 @@ export default function AddHealthEntryScreen() {
     const entryData = {
       ...data,
       symptoms: selectedSymptoms,
-      userId: user.id,
       timestamp: new Date().toISOString(),
     };
 
