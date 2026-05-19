@@ -95,8 +95,10 @@ Studio. The mobile app and all HTTP contracts stay unchanged.
 
 - `prisma/seed.ts`: upsert user `test@healthtracker.dev` with bcryptjs
   hash (cost 10) of `test1234`, name `Test User`.
-- Add `"prisma": { "seed": "ts-node prisma/seed.ts" }` (or the project's
-  existing ts runner) to `server/package.json`; run `npx prisma db seed`.
+- Add `tsx` as a devDependency and
+  `"prisma": { "seed": "tsx prisma/seed.ts" }` to `server/package.json`;
+  run `npx prisma db seed`. (`tsx` chosen over `ts-node` for zero-config
+  ESM/TS execution; the project has no existing standalone TS runner.)
 
 ### 6. Env
 
