@@ -14,6 +14,8 @@ export default function EntryListItem({ entry, onPress }: EntryListItemProps) {
       className="bg-white rounded-2xl p-4 mb-3 border border-neutral-100"
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`Health entry ${formatDateTime(entry.timestamp)}`}
     >
       <View className="flex-row justify-between items-start mb-2">
         <Text className="text-sm font-medium text-neutral-700">

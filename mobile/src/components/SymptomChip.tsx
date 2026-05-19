@@ -17,6 +17,9 @@ export default function SymptomChip({ label, selected, onToggle }: SymptomChipPr
       }`}
       onPress={onToggle}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
     >
       <Text
         className={`text-sm font-medium ${
