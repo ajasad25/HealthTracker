@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { format } from 'date-fns';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { healthEntrySchema, type HealthEntryFormData } from '../utils/validation';
@@ -10,11 +11,13 @@ import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { addEntryThunk } from '../store/healthSlice';
 import { SYMPTOMS } from '../constants/symptoms';
+import CalmScreen from '../components/CalmScreen';
 import VitalInput from '../components/VitalInput';
 import SymptomChip from '../components/SymptomChip';
-import Button from '../components/Button';
-import ScreenContainer from '../components/ScreenContainer';
+import SectionHead from '../components/SectionHead';
+import Icon from '../components/Icon';
 import ErrorBanner from '../components/ErrorBanner';
+import { colors, fonts, radii } from '../theme';
 import type { MainTabParamList } from '../types';
 
 type AddEntryNav = BottomTabNavigationProp<MainTabParamList, 'AddEntry'>;
@@ -54,6 +57,11 @@ export default function AddHealthEntryScreen() {
     );
   }, []);
 
+  const resetForm = () => {
+    reset();
+    setSelectedSymptoms([]);
+  };
+
   const onSubmit = async (data: HealthEntryFormData) => {
     if (!user) return;
 
@@ -66,21 +74,17 @@ export default function AddHealthEntryScreen() {
     const alertResult = checkForAlerts(entryData);
 
     if (alertResult.hasAlert) {
-      Alert.alert(
-        'Health Warning',
-        alertResult.messages.join('\n\n'),
-        [
-          {
-            text: 'Save Anyway',
-            onPress: async () => {
-              await dispatch(addEntryThunk(entryData)).unwrap();
-              resetForm();
-              navigation.navigate('History');
-            },
+      Alert.alert('Health Warning', alertResult.messages.join('\n\n'), [
+        {
+          text: 'Save Anyway',
+          onPress: async () => {
+            await dispatch(addEntryThunk(entryData)).unwrap();
+            resetForm();
+            navigation.navigate('History');
           },
-          { text: 'Edit Entry', style: 'cancel' },
-        ]
-      );
+        },
+        { text: 'Edit Entry', style: 'cancel' },
+      ]);
     } else {
       await dispatch(addEntryThunk(entryData)).unwrap();
       resetForm();
@@ -88,93 +92,249 @@ export default function AddHealthEntryScreen() {
     }
   };
 
-  const resetForm = () => {
-    reset();
-    setSelectedSymptoms([]);
-  };
-
   const parseNumber = (text: string): number | undefined => {
     const num = parseFloat(text);
     return isNaN(num) ? undefined : num;
   };
 
+  const iconTile = (
+    name: 'chevronL',
+    onPress?: () => void
+  ): React.ReactElement => (
+    <TouchableOpacity
+      disabled={!onPress}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.hairSoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Icon name={name} size={18} color={colors.ink2} />
+    </TouchableOpacity>
+  );
+
   return (
-    <ScreenContainer>
+    <CalmScreen tabBarSpace contentContainerStyle={{ paddingHorizontal: 22 }}>
+      {/* Top bar */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 22,
+        }}
+      >
+        {iconTile('chevronL', () => navigation.navigate('Dashboard'))}
+        <Text
+          style={{
+            fontFamily: fonts.mono,
+            fontSize: 10,
+            color: colors.ink3,
+            textTransform: 'uppercase',
+            letterSpacing: 1.6,
+          }}
+        >
+          New entry · {format(new Date(), 'h:mm a')}
+        </Text>
+        <View style={{ width: 38, height: 38 }} />
+      </View>
+
+      <Text
+        style={{
+          fontFamily: fonts.serifItalic,
+          fontSize: 30,
+          color: colors.ink,
+          lineHeight: 33,
+          letterSpacing: -0.6,
+          marginBottom: 4,
+        }}
+      >
+        How are you{'\n'}feeling today?
+      </Text>
+      <Text
+        style={{
+          fontFamily: fonts.sans,
+          fontSize: 13,
+          color: colors.ink3,
+          marginBottom: 22,
+        }}
+      >
+        Log your vitals to keep your trend going.
+      </Text>
+
       <ErrorBanner message={healthError} />
-      <Text className="text-2xl font-bold text-neutral-900 mb-1">
-          Log Health Entry
-        </Text>
-        <Text className="text-sm text-neutral-400 mb-6">
-          Record your current vitals and symptoms
-        </Text>
 
-        <Text className="text-base font-semibold text-neutral-800 mb-3">
-          Vital Signs
-        </Text>
-
+      <SectionHead title="Vital signs" />
+      <View style={{ marginBottom: 22 }}>
         <Controller
           control={control}
           name="heartRate"
           render={({ field: { onChange, value } }) => (
             <VitalInput
-              label="Heart Rate"
+              icon="heart"
+              color={colors.rose}
+              label="Heart rate"
+              hint="Resting · 60–100"
               unit="bpm"
-              placeholder="60-100"
+              placeholder="—"
               value={value?.toString() ?? ''}
-              onChangeText={(text) => onChange(parseNumber(text))}
+              onChangeText={(t) => onChange(parseNumber(t))}
               error={errors.heartRate?.message}
             />
           )}
         />
 
-        <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-          Blood Pressure
-        </Text>
-        <View className="flex-row gap-3 mb-4">
-          <View className="flex-1">
+        {/* Blood pressure — systolic / diastolic share one row shell */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 14,
+            backgroundColor: colors.surface,
+            borderRadius: radii.lg,
+            borderWidth: 1,
+            borderColor:
+              errors.systolic || errors.diastolic
+                ? colors.coral
+                : colors.hairSoft,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            marginBottom: 10,
+          }}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: colors.amber + '22',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="drop" size={20} color={colors.amber} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontFamily: fonts.sansMedium,
+                fontSize: 12,
+                color: colors.ink3,
+                marginBottom: 2,
+              }}
+            >
+              Blood pressure
+            </Text>
+            <Text
+              style={{ fontFamily: fonts.sans, fontSize: 11, color: colors.ink4 }}
+            >
+              Sys / Dia
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
             <Controller
               control={control}
               name="systolic"
               render={({ field: { onChange, value } }) => (
-                <VitalInput
-                  label="Systolic"
-                  unit="mmHg"
-                  placeholder="120"
+                <TextInput
+                  style={{
+                    fontFamily: fonts.serifItalic,
+                    fontSize: 22,
+                    color: colors.ink,
+                    padding: 0,
+                    minWidth: 38,
+                    textAlign: 'right',
+                  }}
+                  keyboardType="numeric"
+                  placeholder="—"
+                  placeholderTextColor={colors.ink4}
                   value={value?.toString() ?? ''}
-                  onChangeText={(text) => onChange(parseNumber(text))}
-                  error={errors.systolic?.message}
+                  onChangeText={(t) => onChange(parseNumber(t))}
                 />
               )}
             />
-          </View>
-          <View className="flex-1">
+            <Text
+              style={{
+                fontFamily: fonts.serifItalic,
+                fontSize: 22,
+                color: colors.ink4,
+                paddingHorizontal: 6,
+              }}
+            >
+              /
+            </Text>
             <Controller
               control={control}
               name="diastolic"
               render={({ field: { onChange, value } }) => (
-                <VitalInput
-                  label="Diastolic"
-                  unit="mmHg"
-                  placeholder="80"
+                <TextInput
+                  style={{
+                    fontFamily: fonts.serifItalic,
+                    fontSize: 22,
+                    color: colors.ink,
+                    padding: 0,
+                    minWidth: 38,
+                    textAlign: 'right',
+                  }}
+                  keyboardType="numeric"
+                  placeholder="—"
+                  placeholderTextColor={colors.ink4}
                   value={value?.toString() ?? ''}
-                  onChangeText={(text) => onChange(parseNumber(text))}
-                  error={errors.diastolic?.message}
+                  onChangeText={(t) => onChange(parseNumber(t))}
                 />
               )}
             />
+            <Text
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 10,
+                color: colors.ink3,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                marginLeft: 6,
+                marginBottom: 4,
+              }}
+            >
+              mmHg
+            </Text>
           </View>
         </View>
+        {errors.systolic || errors.diastolic ? (
+          <Text
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 12,
+              color: colors.coral,
+              marginTop: -6,
+              marginBottom: 8,
+              marginLeft: 4,
+            }}
+          >
+            {errors.systolic?.message ?? errors.diastolic?.message}
+          </Text>
+        ) : null}
 
         <Controller
           control={control}
           name="spo2"
           render={({ field: { onChange, value } }) => (
             <VitalInput
-              label="Blood Oxygen (SpO2)"
+              icon="lung"
+              color={colors.teal}
+              label="Blood oxygen"
+              hint="Normal · 95–100"
               unit="%"
-              placeholder="95-100"
+              placeholder="—"
               value={value?.toString() ?? ''}
-              onChangeText={(text) => onChange(parseNumber(text))}
+              onChangeText={(t) => onChange(parseNumber(t))}
               error={errors.spo2?.message}
             />
           )}
@@ -185,42 +345,67 @@ export default function AddHealthEntryScreen() {
           name="temperature"
           render={({ field: { onChange, value } }) => (
             <VitalInput
+              icon="thermo"
+              color={colors.sage}
               label="Temperature"
+              hint="Normal range"
               unit="°C"
-              placeholder="36.6"
+              placeholder="—"
               value={value?.toString() ?? ''}
-              onChangeText={(text) => onChange(parseNumber(text))}
+              onChangeText={(t) => onChange(parseNumber(t))}
               error={errors.temperature?.message}
             />
           )}
         />
+      </View>
 
-        <Text className="text-base font-semibold text-neutral-800 mt-4 mb-3">
-          Symptoms
-        </Text>
-        <View className="flex-row flex-wrap mb-4">
-          {SYMPTOMS.map((symptom) => (
-            <SymptomChip
-              key={symptom}
-              label={symptom}
-              selected={selectedSymptoms.includes(symptom)}
-              onToggle={() => toggleSymptom(symptom)}
-            />
-          ))}
-        </View>
+      <SectionHead
+        title="Symptoms"
+        action={`${selectedSymptoms.length} selected`}
+      />
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          marginBottom: 22,
+        }}
+      >
+        {SYMPTOMS.map((symptom) => (
+          <SymptomChip
+            key={symptom}
+            label={symptom}
+            selected={selectedSymptoms.includes(symptom)}
+            onToggle={() => toggleSymptom(symptom)}
+          />
+        ))}
+      </View>
 
-        <Text className="text-base font-semibold text-neutral-800 mb-3">
-          Notes
-        </Text>
-        <Controller
-          control={control}
-          name="notes"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <View className="mb-6">
+      <SectionHead title="Notes" />
+      <Controller
+        control={control}
+        name="notes"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <View style={{ marginBottom: 22 }}>
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: radii.lg,
+                borderWidth: 1,
+                borderColor: colors.hairSoft,
+                padding: 16,
+                minHeight: 96,
+              }}
+            >
               <TextInput
-                className="bg-white border border-neutral-300 rounded-xl px-4 py-3 text-base text-neutral-900 min-h-[100px]"
-                placeholder="Any additional notes..."
-                placeholderTextColor="#9CA3AF"
+                style={{
+                  fontFamily: fonts.sans,
+                  fontSize: 13,
+                  color: colors.ink2,
+                  padding: 0,
+                  minHeight: 56,
+                }}
+                placeholder="How are you feeling? Any context worth noting…"
+                placeholderTextColor={colors.ink4}
                 multiline
                 textAlignVertical="top"
                 onChangeText={onChange}
@@ -228,24 +413,69 @@ export default function AddHealthEntryScreen() {
                 value={value}
                 maxLength={500}
               />
-              {errors.notes ? (
-                <Text className="text-xs text-danger-500 mt-1">
-                  {errors.notes.message}
-                </Text>
-              ) : null}
-              <Text className="text-xs text-neutral-400 mt-1 text-right">
-                {(value ?? '').length}/500
+              <Text
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 11,
+                  color: colors.ink4,
+                  textAlign: 'right',
+                  marginTop: 8,
+                }}
+              >
+                {(value ?? '').length} / 500
               </Text>
             </View>
-          )}
-        />
+            {errors.notes ? (
+              <Text
+                style={{
+                  fontFamily: fonts.sans,
+                  fontSize: 12,
+                  color: colors.coral,
+                  marginTop: 4,
+                }}
+              >
+                {errors.notes.message}
+              </Text>
+            ) : null}
+          </View>
+        )}
+      />
 
-        <Button
-          title="Submit Entry"
-          onPress={handleSubmit(onSubmit)}
-          loading={isLoading}
-          disabled={!isValid}
-        />
-    </ScreenContainer>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        disabled={!isValid || isLoading}
+        onPress={handleSubmit(onSubmit)}
+        accessibilityRole="button"
+        accessibilityLabel="Save entry"
+        accessibilityState={{ disabled: !isValid || isLoading, busy: isLoading }}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          backgroundColor: colors.teal,
+          borderRadius: 16,
+          paddingVertical: 16,
+          opacity: !isValid || isLoading ? 0.5 : 1,
+          shadowColor: colors.teal,
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 10 },
+          elevation: 6,
+        }}
+      >
+        <Icon name="check" size={18} color={colors.white} stroke={2} />
+        <Text
+          style={{
+            fontFamily: fonts.sansSemibold,
+            fontSize: 15,
+            color: colors.white,
+            letterSpacing: 0.2,
+          }}
+        >
+          {isLoading ? 'Saving…' : 'Save entry'}
+        </Text>
+      </TouchableOpacity>
+    </CalmScreen>
   );
 }
