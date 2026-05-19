@@ -50,8 +50,10 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Dashboard: undefined;
-  AddEntry: undefined;
   History: undefined;
+  AddEntry: undefined;
+  Trends: undefined;
+  Profile: undefined;
 };
 
 export type HistoryStackParamList = {
