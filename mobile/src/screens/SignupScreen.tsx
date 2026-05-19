@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -16,7 +15,9 @@ import { signupSchema, type SignupFormData } from '../utils/validation';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { signupThunk, clearError } from '../store/authSlice';
-import Button from '../components/Button';
+import AuthField from '../components/AuthField';
+import Icon from '../components/Icon';
+import { colors, fonts } from '../theme';
 import type { AuthStackParamList } from '../types';
 
 type SignupNav = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
@@ -43,144 +44,226 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-neutral-50"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: colors.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="px-8 py-12 w-full max-w-[480px] self-center">
-          <View className="items-center mb-10">
-            <Text className="text-6xl mb-4">💓</Text>
-            <Text className="text-3xl font-bold text-primary-700">
-              Create Account
-            </Text>
-            <Text className="text-base text-neutral-400 mt-2">
-              Start tracking your health
-            </Text>
-          </View>
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: -120,
+          left: -80,
+          width: 320,
+          height: 320,
+          borderRadius: 160,
+          backgroundColor: colors.teal,
+          opacity: 0.1,
+        }}
+      />
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          bottom: -100,
+          right: -60,
+          width: 260,
+          height: 260,
+          borderRadius: 130,
+          backgroundColor: colors.sage,
+          opacity: 0.12,
+        }}
+      />
 
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 28,
+          paddingTop: 80,
+          paddingBottom: 40,
+          width: '100%',
+          maxWidth: 480,
+          alignSelf: 'center',
+        }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              backgroundColor: colors.teal,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: colors.teal,
+              shadowOpacity: 0.4,
+              shadowRadius: 14,
+              shadowOffset: { width: 0, height: 10 },
+              elevation: 6,
+            }}
+          >
+            <Icon name="heart" size={26} color={colors.white} stroke={1.8} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.serifItalic,
+              fontSize: 40,
+              color: colors.ink,
+              lineHeight: 42,
+              letterSpacing: -1.2,
+              marginTop: 28,
+            }}
+          >
+            Create{'\n'}account.
+          </Text>
+          <Text
+            style={{
+              fontFamily: fonts.sans,
+              fontSize: 14,
+              color: colors.ink3,
+              lineHeight: 21,
+              marginTop: 12,
+              maxWidth: 260,
+            }}
+          >
+            Start tracking your vitals and build a clear picture of your health.
+          </Text>
+        </View>
+
+        <View style={{ marginTop: 36 }}>
           {error ? (
-            <View className="bg-danger-50 border border-danger-200 rounded-xl p-3 mb-4">
-              <Text className="text-danger-600 text-sm text-center">{error}</Text>
+            <View
+              style={{
+                backgroundColor: colors.coralTint,
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.sansMedium,
+                  fontSize: 13,
+                  color: '#7C2F1B',
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </Text>
             </View>
           ) : null}
 
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-              Name
-            </Text>
-            <Controller
-              control={control}
-              name="name"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 ${
-                    errors.name ? 'border-danger-400' : 'border-neutral-300'
-                  }`}
-                  placeholder="Jane Doe"
-                  placeholderTextColor="#9CA3AF"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                />
-              )}
-            />
-            {errors.name ? (
-              <Text className="text-xs text-danger-500 mt-1">
-                {errors.name.message}
-              </Text>
-            ) : null}
-          </View>
-
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-              Email
-            </Text>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 ${
-                    errors.email ? 'border-danger-400' : 'border-neutral-300'
-                  }`}
-                  placeholder="you@example.com"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  value={value}
-                />
-              )}
-            />
-            {errors.email ? (
-              <Text className="text-xs text-danger-500 mt-1">
-                {errors.email.message}
-              </Text>
-            ) : null}
-          </View>
-
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-neutral-700 mb-1.5">
-              Password
-            </Text>
-            <View className="relative">
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <TextInput
-                    className={`bg-white border rounded-xl px-4 py-3.5 text-base text-neutral-900 pr-12 ${
-                      errors.password ? 'border-danger-400' : 'border-neutral-300'
-                    }`}
-                    placeholder="At least 6 characters"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    value={value}
-                  />
-                )}
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AuthField
+                label="Name"
+                icon="user"
+                placeholder="Jane Doe"
+                autoCapitalize="words"
+                autoCorrect={false}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                error={errors.name?.message}
               />
-              <TouchableOpacity
-                className="absolute right-3 top-3.5"
-                onPress={() => setShowPassword(!showPassword)}
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <Text className="text-lg">{showPassword ? '🙈' : '👁️'}</Text>
-              </TouchableOpacity>
-            </View>
-            {errors.password ? (
-              <Text className="text-xs text-danger-500 mt-1">
-                {errors.password.message}
-              </Text>
-            ) : null}
-          </View>
+            )}
+          />
 
-          <Button
-            title="Sign Up"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AuthField
+                label="Email"
+                icon="dot"
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                error={errors.email?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <AuthField
+                label="Password"
+                icon="dot"
+                placeholder="At least 6 characters"
+                secureTextEntry={!showPassword}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                error={errors.password?.message}
+                secureToggle={{
+                  shown: showPassword,
+                  onToggle: () => setShowPassword((s) => !s),
+                }}
+              />
+            )}
           />
 
           <TouchableOpacity
-            className="mt-6 flex-row justify-center"
+            activeOpacity={0.85}
+            disabled={isLoading}
+            onPress={handleSubmit(onSubmit)}
+            accessibilityRole="button"
+            accessibilityLabel="Sign up"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              backgroundColor: colors.ink,
+              borderRadius: 14,
+              paddingVertical: 16,
+              marginTop: 4,
+              opacity: isLoading ? 0.6 : 1,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.sansSemibold,
+                fontSize: 15,
+                color: colors.white,
+                letterSpacing: 0.2,
+              }}
+            >
+              {isLoading ? 'Creating account…' : 'Create account'}
+            </Text>
+            {!isLoading && (
+              <Icon name="arrow" size={16} color={colors.white} stroke={1.8} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={() => navigation.navigate('Login')}
             accessibilityRole="button"
             accessibilityLabel="Go to sign in"
+            style={{ marginTop: 22 }}
           >
-            <Text className="text-sm text-neutral-500">
+            <Text
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 13,
+                color: colors.ink3,
+                textAlign: 'center',
+              }}
+            >
               Already have an account?{' '}
-            </Text>
-            <Text className="text-sm font-semibold text-primary-600">
-              Sign in
+              <Text style={{ fontFamily: fonts.sansSemibold, color: colors.teal }}>
+                Sign in
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>
