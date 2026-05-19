@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { prisma } from '@/lib/prisma';
 import { signupSchema } from '@/lib/validation';
 import { hashPassword } from '@/lib/password';
 import { signToken } from '@/lib/jwt';
@@ -12,24 +12,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
   const { name, email, password } = parsed.data;
-  const db = supabaseAdmin();
 
-  const { data: existing } = await db
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
   if (existing) {
     return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
   }
 
   const password_hash = await hashPassword(password);
-  const { data, error } = await db
-    .from('users')
-    .insert({ name, email, password_hash })
-    .select('id,email,name')
-    .single();
-  if (error || !data) {
+  const data = await prisma.user
+    .create({
+      data: { name, email, password_hash },
+      select: { id: true, email: true, name: true },
+    })
+    .catch(() => null);
+  if (!data) {
     return NextResponse.json({ error: 'Could not create user' }, { status: 500 });
   }
 
