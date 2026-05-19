@@ -1,97 +1,100 @@
 # Health Tracker
 
-A React Native health monitoring application built with Expo, TypeScript, Redux Toolkit, and NativeWind. Track vitals, log symptoms, and receive real-time health alerts.
+A React Native health monitoring app (Expo, TypeScript, Redux Toolkit,
+NativeWind) backed by a Next.js API over Supabase Postgres. Track vitals,
+log symptoms, and receive real-time health alerts.
 
-## Setup & Run
+## Monorepo layout
+
+- `mobile/` — Expo React Native app
+- `server/` — Next.js backend (REST API over Supabase; owns auth)
+- `docs/superpowers/` — design spec & implementation plan
+
+## Backend (`server/`)
 
 ```bash
-# Install dependencies
+cd server
+cp .env.local.example .env.local
+# Fill in:
+#   SUPABASE_URL                 (Supabase project URL)
+#   SUPABASE_SERVICE_ROLE_KEY    (Supabase dashboard → Project Settings → API)
+#   JWT_SECRET                   (any long random string, e.g. `openssl rand -hex 32`)
 npm install
-
-# Start development server
-npx expo start
-
-# Run on specific platform
-npx expo start --android
-npx expo start --ios
-npx expo start --web
-
-# Run tests
-npx jest
+npm run dev          # http://localhost:3000
+npm test             # alert logic / jwt / password unit tests
 ```
 
-**Login credentials:** Any email + password `password123`
+### API
+
+| Method | Path | Auth | Body |
+|---|---|---|---|
+| POST | `/api/auth/signup` | — | `{ name, email, password }` |
+| POST | `/api/auth/login` | — | `{ email, password }` |
+| GET | `/api/auth/me` | Bearer | — |
+| GET | `/api/entries` | Bearer | — |
+| POST | `/api/entries` | Bearer | vitals + symptoms + notes |
+
+Passwords are bcrypt-hashed; the server issues a 7-day JWT and is the
+source of truth for the `hasAlert` flag. Supabase is reached only with the
+service-role key (server-side); RLS is enabled with no public policies, so
+the database is unreachable except through this backend.
+
+## Mobile (`mobile/`)
+
+```bash
+cd mobile
+cp .env.example .env
+# Set EXPO_PUBLIC_API_URL to the backend URL.
+# Physical device / emulator: use your machine's LAN IP, NOT localhost,
+#   e.g. EXPO_PUBLIC_API_URL=http://192.168.1.50:3000
+npm install
+npx expo start       # press i / a / w, or scan the QR code
+npx jest             # 35 unit tests (alert logic, validation, MetricCard)
+npx tsc --noEmit     # typecheck
+```
+
+Run the backend first, then the mobile app pointed at it.
 
 ## Architecture
 
 ```
-src/
-  app/             # Navigation (RootNavigator with auth-gated routing)
-  screens/         # LoginScreen, DashboardScreen, AddHealthEntryScreen,
-                   # HealthHistoryScreen, HealthEntryDetailScreen
-  components/      # Reusable UI: MetricCard, VitalInput, SymptomChip,
-                   # AlertBanner, Button, LoadingOverlay, EmptyState, EntryListItem
-  store/           # Redux store + authSlice + healthSlice
-  hooks/           # useAppDispatch, useAppSelector (typed Redux hooks)
-  services/        # mockApi (simulated REST), storage (expo-secure-store)
-  utils/           # alertLogic (decoupled health alerts), validation (zod schemas),
-                   # formatters (date/time/status helpers)
-  types/           # All TypeScript interfaces and navigation param types
-  constants/       # Thresholds, symptom list, color palette
-  __tests__/       # Jest tests for alertLogic, validation, MetricCard
+mobile/src/
+  navigation/  # RootNavigator: auth-gated; Auth(Login/Signup) ↔ Main tabs
+  screens/     # Login, Signup, Dashboard, AddHealthEntry, History, Detail
+  components/  # MetricCard, VitalInput, SymptomChip, AlertBanner, Button,
+               # ScreenContainer (safe-area + responsive width), ErrorBanner,
+               # EmptyState, EntryListItem
+  store/       # Redux store + authSlice + healthSlice (API-backed thunks)
+  services/    # api.ts (typed fetch client), storage.ts (JWT in SecureStore)
+  utils/       # alertLogic (display), validation (zod), formatters
+  types/       # shared interfaces & navigation param types
+  constants/   # thresholds, symptom list, color palette
+
+server/
+  app/api/     # auth/{signup,login,me}, entries route handlers
+  lib/         # supabase, password (bcrypt), jwt, auth guard, validation,
+               # alertLogic (source of truth), thresholds, mappers
 ```
 
-## Design Decisions
+### Design decisions
 
-### Why Redux Toolkit over Zustand/Context
+- **Next.js owns auth.** Custom `users` table + bcrypt + app-issued JWT.
+  The mobile app never talks to Supabase directly; the service-role key
+  stays server-side.
+- **Server computes alerts.** `checkForAlerts` runs on the backend so the
+  `hasAlert` flag can't be spoofed by the client (still used client-side
+  purely for display banners).
+- **Responsive by default.** `ScreenContainer` applies safe-area insets and
+  a max content width so the UI works on notched phones, tablets, and web.
+- **Redux Toolkit retained** for predictable, debuggable health-data state
+  with built-in async-thunk loading/error handling.
+- **JWT-only SecureStore.** Only the small token is persisted in the device
+  secure enclave; entry history lives in Postgres (avoids SecureStore's
+  ~2 KB per-value limit).
 
-- **Predictable state** — Redux's single store with strict unidirectional data flow makes health data state changes traceable and debuggable. For a health app where data integrity matters, this predictability is critical.
-- **Async thunks** — `createAsyncThunk` provides built-in loading/error/success state management for API calls and SecureStore operations without extra boilerplate.
-- **DevTools** — Redux DevTools enable time-travel debugging, which is invaluable when diagnosing state issues across auth and health data flows.
-- **Scalability** — As the app grows (e.g., adding provider sharing, medication tracking), Redux's slice pattern scales cleanly without the prop-drilling issues of Context.
+## Known limitations
 
-### NativeWind (Tailwind CSS)
-
-Chosen for rapid, consistent styling with utility classes. The design system colors in `tailwind.config.js` ensure healthcare-appropriate visual consistency (primary teal, danger red, warning amber, success green) across all components.
-
-### Zod + react-hook-form
-
-- Zod provides runtime validation with TypeScript type inference — the schema is the single source of truth for both validation rules and form types.
-- react-hook-form minimizes re-renders with uncontrolled inputs and integrates seamlessly with Zod via `@hookform/resolvers`.
-
-### expo-secure-store
-
-Used for persisting auth tokens and health entry data. SecureStore encrypts data at rest using the device's secure enclave (Keychain on iOS, EncryptedSharedPreferences on Android), appropriate for health-related data.
-
-### Alert Logic Separation
-
-`checkForAlerts()` is a pure function in `utils/alertLogic.ts`, completely decoupled from UI and Redux. This design:
-- Makes alert logic independently testable (see `__tests__/alertLogic.test.ts`)
-- Allows reuse in both the Redux thunk (setting `hasAlert` flag) and the detail screen
-- Enables future extension (e.g., push notifications) without touching UI code
-
-## Features
-
-- **Authentication** — Login with form validation, session persistence via SecureStore
-- **Dashboard** — Time-of-day greeting, today's vitals summary with color-coded status indicators, alert banners
-- **Health Entry Form** — Validated numeric inputs for all vitals, multi-select symptom chips, optional notes (500 char limit)
-- **Alert System** — Automatic detection of critical heart rate (>120), low SpO2 (<90), and fever (>39°C) with in-app warnings
-- **History** — Chronological FlatList with pull-to-refresh, entry badges, alert indicators
-- **Detail View** — Full vital display with status colors, symptom chips, notes, and alert/normal banners
-
-## Known Limitations
-
-- **Mock API only** — All data is simulated with 400ms delays; no real backend. Seed data regenerates on each fetch.
-- **No real authentication** — Any email works with the hardcoded password. No account creation flow.
-- **No data persistence across sessions** — SecureStore has a ~2KB limit per key on some platforms; large entry histories may be truncated.
-- **No push notifications** — expo-notifications is installed but not wired to alert logic (infrastructure is in place).
-- **No charts** — react-native-chart-kit is installed but trend visualization is not yet implemented.
-- **Single user** — No multi-user or provider sharing capability.
-
-## Assumptions
-
-- Users enter vitals manually (no device/wearable integration)
-- Metric units (°C, mmHg) — no imperial conversion
-- Alert thresholds are fixed constants, not user-configurable
-- The app is used by a single person on a single device
-- Network connectivity is not required (all data is local/mocked)
+- No push notifications (`expo-notifications` not wired to alerts).
+- No trend charts (`react-native-chart-kit` unused).
+- No offline mode — the backend must be reachable.
+- Single Supabase project; no per-environment config beyond `.env`.
