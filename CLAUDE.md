@@ -66,14 +66,25 @@ DB; this is intended, not a missing-policy bug.
 
 **Navigation (`mobile/src/navigation/RootNavigator.tsx`):** root stack
 swaps `Auth` (Login/Signup) ↔ `Main` on `token`. `Main` = bottom tabs
-(Dashboard / AddEntry / History); History wraps a native-stack
-(`HistoryList` → `EntryDetail`). Param lists in `src/types/index.ts`.
+with a custom floating-FAB tab bar (`components/AppTabBar`): Today
+(Dashboard) / History / Trends / Profile, plus a center FAB that routes to
+`AddEntry`. History wraps a native-stack (`HistoryList` → `EntryDetail`,
+both `headerShown:false` — screens render their own top bar). Param lists
+in `src/types/index.ts`.
 
-**Styling:** NativeWind via `className`. Wrap screens in
-`components/ScreenContainer` (safe-area insets + max content width;
-pass `hasHeader` when the screen has a nav header). Color tokens
-(primary teal `#0077A8`, danger/warning/success) in `tailwind.config.js` —
-don't hardcode hex.
+**Styling — "Clinical Calm" design system:** the source of truth is
+`mobile/src/theme/index.ts` (`colors`, `fonts`, `radii`, `statusColor`).
+Reference `theme.*` via React Native `style={}`; don't hardcode hex and
+don't add NativeWind classes to redesigned screens (the old
+`tailwind.config.js` primary/neutral scale is legacy and unused by the UI).
+Fonts are loaded in `App.tsx` via `@expo-google-fonts/*` — editorial
+numbers use the dedicated **Newsreader italic** face (`fonts.serifItalic`),
+never `fontStyle:'italic'` (RN can't synthesize custom-font italics).
+Wrap screens in `components/CalmScreen` (cream canvas + safe-area + max
+width; `tabBarSpace` adds bottom clearance for the floating tab bar).
+Shared atoms: `Icon` (SVG set), `Sparkline`, `HealthRing`, `StatusPill`,
+`BigStat`, `SectionHead`, `CalmCard`, `MetricCard` (kept its
+label/value/unit/status API for tests).
 
 ## Gotchas
 
