@@ -42,4 +42,8 @@ yarn-error.*
 
 # claude
 .claude*
-config.bat
+
+# local env files (restored after security incident)
+.env
+.env.*
+!.env.example
