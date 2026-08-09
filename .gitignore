@@ -9,4 +9,8 @@ server/.next/
 .env*.local
 !.env.example
 !.env.local.example
-config.bat
+
+# local env files (restored after security incident)
+.env
+.env.*
+!.env.example
