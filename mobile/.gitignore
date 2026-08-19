@@ -42,4 +42,3 @@ yarn-error.*
 
 # claude
 .claude*
-config.bat
